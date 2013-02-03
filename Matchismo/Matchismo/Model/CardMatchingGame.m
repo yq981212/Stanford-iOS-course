@@ -16,6 +16,9 @@
 
 @implementation CardMatchingGame
 
+// if no cards were flipped, result reads No cards were flipped
+// model is the brain behind our application, and it knows about the flipped cards
+// so it should contain this property, and not the controller
 - (NSString *)result
 {
     if (!_result) {
@@ -45,25 +48,32 @@
 - (void)flipCardAtIndex:(NSUInteger)index forMatchingMode:(NSUInteger)mode
 {
     Card *card = [self cardAtIndex:index];
-    NSMutableArray *faceUpAndPlayableCards = [[NSMutableArray alloc] init];
+    NSMutableArray *faceUpAndPlayableCards = [[NSMutableArray alloc] init]; // self explanatory
     
     if (card && !card.isUnplayable)
     {
         if (!card.isFaceUp)
         {
+            // as soon as a card is flipped, we describe what happened
             self.result = [NSString stringWithFormat:@"Flipped %@", card.contents];
-            //if the card was not face up we should check whether flipping this card creates the match
-            //looping through other cards looking for another face up, playable one
+            
+            //looping through other cards looking for another face up, playable ones
             for (Card *otherCard in self.cards)
             {
+                // when found, they are added to the appropriate array
                 if (otherCard.isFaceUp && !otherCard.isUnplayable)
                 {
                     [faceUpAndPlayableCards addObject:otherCard];
                 }
+                
+                // checking to see if number of face up and playable cards correspond to 2 or 3-cards matching game
+                // for 2-cards matching game there should be 1 card
+                // for 3-cards matching game there should be 2 cards
+                // mode is defined in the header file as a index of segmented control
                 if ([faceUpAndPlayableCards count] == mode + 1)
                 {
+                    // if there are any face up and playable cards, we match them to the last flipped card
                     if ([faceUpAndPlayableCards count]) {
-                        //when found, we check to see if it matches
                         int matchScore = [card match:faceUpAndPlayableCards];
                         if (matchScore)
                         {
@@ -72,11 +82,10 @@
                                 flippedCard.unplayable = YES;
                             }
                             self.score += matchScore * MATCH_BONUS;
-                            if (mode == TWO_CARDS_MATCHING_GAME) {
-                                self.result = [NSString stringWithFormat:@"Matched %@ & %@ for %d points", card.contents, [[faceUpAndPlayableCards lastObject] contents], matchScore * MATCH_BONUS];
-                            }
-                            else self.result = [NSString stringWithFormat:@"Matched %@, %@ & %@ for %d points", card.contents, [faceUpAndPlayableCards[0] contents], [faceUpAndPlayableCards[1] contents], matchScore * MATCH_BONUS];
-                        
+                            
+                            // complete description of flipped cards
+                            NSString *flippedCards = [card.contents stringByAppendingString:[self formResultFromFlippedCards:faceUpAndPlayableCards]];
+                            self.result = [NSString stringWithFormat:@"Matched %@ for %d points", flippedCards, matchScore * MATCH_BONUS];
                         }
                         else
                         {
@@ -85,14 +94,15 @@
                                 flippedCard.faceUp = NO;
                             }
                             self.score -= MISMATCH_PENALTY;
-                            if (mode == TWO_CARDS_MATCHING_GAME) {
-                                self.result = [NSString stringWithFormat:@"%@ & %@ don't match, %d points penalty", card.contents, [[faceUpAndPlayableCards lastObject] contents], MISMATCH_PENALTY];
-                            }
-                            else self.result = [NSString stringWithFormat:@"%@, %@ & %@ don't match, %d points penalty", card.contents, [faceUpAndPlayableCards[0] contents], [faceUpAndPlayableCards[1] contents], MISMATCH_PENALTY];
+                            
+                            // complete description of flipped cards
+                            NSString *flippedCards = [card.contents stringByAppendingString:[self formResultFromFlippedCards:faceUpAndPlayableCards]];
+                            self.result = [NSString stringWithFormat:@"%@ don't match, %d points penalty", flippedCards, MISMATCH_PENALTY];
                         }
                         break;
                     }
                 }
+                // continue flipping cards until there is an apprpriate number of face up and playing cards depending on the match mode
                 else continue;
             }
             self.score -= FLIP_COST;
@@ -100,6 +110,19 @@
         //flip the card
         card.faceUp = !card.isFaceUp;
     }
+}
+
+// creating a string which describes played cards
+- (NSString *)formResultFromFlippedCards:(NSArray *)cards
+{
+    NSString *result = @"";
+    for (Card *card in cards) {
+        if (card == [cards lastObject]) {
+            result = [result stringByAppendingFormat:@"& %@", card.contents];
+        }
+        else result = [result stringByAppendingFormat:@", %@", card.contents];
+    }
+    return result;
 }
 
 //designated initializer

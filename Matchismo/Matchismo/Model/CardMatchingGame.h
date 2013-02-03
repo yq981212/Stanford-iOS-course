@@ -16,7 +16,7 @@
 @interface CardMatchingGame : NSObject
 
 @property (readonly, nonatomic) int score;
-@property (readonly, strong, nonatomic) NSString *result;
+@property (readonly, strong, nonatomic) NSString *result; // description of flipped cards
 
 // designated initializer
 - (id)initWithCardCount:(NSUInteger)count
